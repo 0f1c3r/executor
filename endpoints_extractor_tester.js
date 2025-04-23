@@ -200,25 +200,12 @@ javascript:(function(){
     document.getElementById('ep-params').addEventListener('click', parseUrlParameters);
     document.getElementById('ep-add-param').addEventListener('click', addParameter);
     
-    // Enhanced regex patterns
     const regexPatterns = [
-      /(?<=(["'`]|=|\s+))\/[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]*(?=(["'`]|\s|>|\)|}))/g,  // Standard paths
-      /(?<=["'`])(https?:\/\/[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]*)(?=["'`])/g,  // Full URLs
-      /(?<=(api|v[0-9]+|api\/v[0-9]+)\/)[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]+/g  // API endpoints
+      /(?<=(["'`]|=|\s+))\/[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]*(?=(["'`]|\s|>|\)|}))/g,
+      /(?<=["'`])(https?:\/\/[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]*)(?=["'`])/g,  
+      /(?<=(api|v[0-9]+|api\/v[0-9]+)\/)[a-zA-Z0-9_?&=.\/\-#%+~:@\[\]\{\}\|^]+/g  
     ];
     
-    // For finding post parameters in JavaScript code
-    const postParamRegexPatterns = [
-      /["']([a-zA-Z0-9_-]+)["']\s*:\s*["']([^"']*)["']/g,  // "param": "value"
-      /["']([a-zA-Z0-9_-]+)["']\s*:\s*([a-zA-Z0-9_$.]+)/g,  // "param": value
-      /formData\.append\(["']([a-zA-Z0-9_-]+)["']/g,  // formData.append("param")
-      /new\s+FormData\(\)/g,  // new FormData() - to find forms being submitted via FormData
-      /data\s*:\s*{([^}]*)}/g, // data: {...} in ajax calls
-      /params\s*:\s*{([^}]*)}/g, // params: {...} in axios/fetch calls
-      /body\s*:\s*JSON\.stringify\(\s*{([^}]*)}/g, // body: JSON.stringify({...}) in fetch calls
-    ];
-    
-    // Map to store endpoints and their associated information
     const endpointInfo = new Map();
     const results = new Set();
     const statusEl = document.getElementById('ep-status');
@@ -466,18 +453,15 @@ javascript:(function(){
         });
     }
     
-    // Load the discovered parameters for an endpoint
     function prepareEndpointForTesting(url) {
       document.getElementById('tab-request').click();
       
       document.getElementById('ep-url').value = url;
       
-      // Set the HTTP method based on what we found
       const info = endpointInfo.get(url);
       if (info && info.method) {
         document.getElementById('ep-method').value = info.method;
         
-        // If it's a POST request and we have discovered parameters, populate the request body
         if (info.method === 'POST' && info.postParams && info.postParams.length > 0) {
           const requestBody = {};
           info.postParams.forEach(param => {
@@ -487,7 +471,6 @@ javascript:(function(){
         }
       }
       
-      // Get parameters from URL if present
       if (url.includes('?')) {
         parseUrlParameters();
       } else {
@@ -495,7 +478,6 @@ javascript:(function(){
         updateParametersList(url);
       }
       
-      // Set default headers based on the method
       if (info && info.method === 'POST') {
         document.getElementById('ep-headers').value = 'Content-Type: application/json\nAccept: application/json';
       } else {
@@ -559,7 +541,6 @@ javascript:(function(){
     }
     
     function copyResults() {
-      // Create a detailed export that includes methods and parameters
       let exportText = '';
       Array.from(results).sort().forEach(url => {
         const info = endpointInfo.get(url) || {};
@@ -581,7 +562,6 @@ javascript:(function(){
     }
     
     function downloadResults() {
-      // Create a detailed export that includes methods and parameters
       let exportText = '';
       Array.from(results).sort().forEach(url => {
         const info = endpointInfo.get(url) || {};
@@ -620,38 +600,29 @@ javascript:(function(){
       
       url = url.replace(/["'`]$/, '');
       
-      // Store the URL in the results set
       results.add(url);
       
-      // Add or update endpoint information
       const info = endpointInfo.get(url) || { method: 'GET', postParams: [] };
       
-      // Only update method if it's specifically a POST or the current method is unknown
       if (method === 'POST' || info.method === 'GET') {
         info.method = method;
       }
       
-      // Add any new post parameters 
       if (postParams.length > 0) {
-        // Filter out duplicates
         const existingParamNames = new Set(info.postParams.map(p => p.name));
         const newParams = postParams.filter(p => !existingParamNames.has(p.name));
         info.postParams = [...info.postParams, ...newParams];
       }
       
-      // Update the endpoint info
       endpointInfo.set(url, info);
       
-      // Update the display
       updateResults();
     }
     
-    // Helper to escape regex special characters
     function escapeRegExp(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
     
-    // Extract parameters from a JavaScript object literal string
     function extractParamsFromObject(text, params) {
       const keyValueRegex = /['"]?([a-zA-Z0-9_-]+)['"]?\s*:\s*['"]?([^'",}]*)['"]?/g;
       let match;
@@ -661,7 +632,6 @@ javascript:(function(){
     }
     
     function findEndpoints(content) {
-      // Find URLs using the main regex patterns
       regexPatterns.forEach(regex => {
         let match;
         regex.lastIndex = 0;
@@ -681,7 +651,6 @@ javascript:(function(){
         }
       });
       
-      // Look for POST requests in JavaScript
       const postPatterns = [
         /\.post\(['"]([^'"]+)['"]/g,
         /fetch\(['"]([^'"]+)['"][^)]*\)\s*\.then/g,
@@ -702,13 +671,11 @@ javascript:(function(){
             if (endpoint.startsWith('http')) {
               try {
                 const urlObj = new URL(endpoint);
-                // Find any potential POST parameters for this endpoint
                 const postParams = findPostParams(content, endpoint);
                 addResult(urlObj.pathname + urlObj.search, 'POST', postParams);
                 addResult(endpoint, 'POST', postParams);
               } catch (e) {}
             } else {
-              // Find any potential POST parameters for this endpoint
               const postParams = findPostParams(content, endpoint);
               addResult(endpoint, 'POST', postParams);
             }
@@ -716,7 +683,6 @@ javascript:(function(){
         }
       });
       
-      // Scan for HTML forms with POST method
       if (content.includes('<form') && content.includes('method="post"')) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
@@ -727,7 +693,6 @@ javascript:(function(){
           if (action) {
             const postParams = [];
             
-            // Get input fields from the form
             const inputs = form.querySelectorAll('input[name], select[name], textarea[name]');
             inputs.forEach(input => {
               const name = input.getAttribute('name');
@@ -743,12 +708,10 @@ javascript:(function(){
       }
     }
     
-    // Function to find POST parameters in JavaScript code related to a specific endpoint
     function findPostParams(content, endpoint) {
       const postParams = [];
       const safeEndpoint = escapeRegExp(endpoint);
       
-      // Look for data associated with this endpoint
       const dataPatterns = [
         new RegExp(`['"]${safeEndpoint}['"][^{]*{[^}]*data\\s*:\\s*{([^}]*)}`, 'g'),
         new RegExp(`\\.post\\(['"]${safeEndpoint}['"][^{]*{([^}]*)}`, 'g'),
@@ -757,7 +720,6 @@ javascript:(function(){
         new RegExp(`data\\s*:\\s*{([^}]*)}`, 'g')
       ];
       
-      // Process each pattern to extract parameter data
       dataPatterns.forEach(pattern => {
         let match;
         while ((match = pattern.exec(content)) !== null) {
@@ -767,7 +729,6 @@ javascript:(function(){
         }
       });
       
-      // Look for FormData associated with this endpoint
       const formDataSection = content.match(new RegExp(`(new\\s+FormData[\\s\\S]*?)${safeEndpoint}`, 'g'));
       if (formDataSection) {
         const formDataParams = formDataSection[0].match(/\.append\s*\(\s*['"]([^'"]+)['"]\s*,\s*([^)]+)\)/g);
@@ -781,7 +742,6 @@ javascript:(function(){
         }
       }
       
-      // Look for input fields with name attributes in the vicinity of the endpoint
       const endpointContext = content.match(new RegExp(`[\\s\\S]{0,500}${safeEndpoint}[\\s\\S]{0,500}`, 'g'));
       if (endpointContext) {
         const nameAttrs = endpointContext[0].match(/name\s*=\s*['"]([^'"]+)['"]/g);
@@ -798,21 +758,18 @@ javascript:(function(){
       return postParams;
     }
     
-    // Scan inline scripts
     updateStatus('Scanning inline scripts...');
     const inlineScripts = document.querySelectorAll('script:not([src])');
     inlineScripts.forEach(script => {
       findEndpoints(script.textContent);
     });
     
-    // Scan HTML forms directly
     updateStatus('Scanning HTML forms...');
     document.querySelectorAll('form[method="post"]').forEach(form => {
       const action = form.getAttribute('action');
       if (action) {
         const postParams = [];
         
-        // Get input fields from the form
         form.querySelectorAll('input[name], select[name], textarea[name]').forEach(input => {
           const name = input.getAttribute('name');
           const value = input.getAttribute('value') || '';
@@ -825,7 +782,6 @@ javascript:(function(){
       }
     });
     
-    // Scan external scripts
     updateStatus('Scanning external scripts...');
     const externalScripts = Array.from(document.getElementsByTagName('script'))
       .filter(s => s.src && s.src.trim() !== '');
@@ -854,16 +810,13 @@ javascript:(function(){
       });
     };
     
-    // Start processing external scripts
     processExternalScripts();
     
     function scanPage() {
       updateStatus('Scanning page content...');
       
-      // Scan the HTML content
       findEndpoints(document.documentElement.outerHTML);
       
-      // Scan links
       document.querySelectorAll('a[href]').forEach(link => {
         const href = link.getAttribute('href');
         if (href && (href.startsWith('/') || href.startsWith('#') || href.startsWith('http'))) {
@@ -871,17 +824,14 @@ javascript:(function(){
         }
       });
       
-      // Add current URL
       addResult(window.location.pathname + window.location.search);
       
-      // Setup network monitoring
       setupNetworkMonitoring();
       
       updateStatus('Scan complete. Monitoring for new requests...');
     }
     
     function setupNetworkMonitoring() {
-      // Monitor XMLHttpRequest
       const originalXhrOpen = XMLHttpRequest.prototype.open;
       XMLHttpRequest.prototype.open = function(method, url) {
         if (url) {
@@ -889,16 +839,13 @@ javascript:(function(){
             const urlObj = new URL(url, window.location.origin);
             addResult(urlObj.pathname + urlObj.search, method);
             
-            // Try to capture any data that will be sent
             if (method.toUpperCase() === 'POST') {
-              // We'll try to intercept the send method
               const originalSend = this.send;
               this.send = function(data) {
                 if (data) {
                   try {
                     let postParams = [];
                     
-                    // Try to parse as JSON
                     if (typeof data === 'string' && data.trim().startsWith('{')) {
                       try {
                         const jsonData = JSON.parse(data);
@@ -908,26 +855,22 @@ javascript:(function(){
                       } catch (e) {}
                     }
                     
-                    // Try to parse as FormData
                     if (data instanceof FormData) {
                       data.forEach((value, key) => {
                         postParams.push({ name: key, value: String(value) });
                       });
                     }
                     
-                    // Update the endpoint info with these parameters
                     if (postParams.length > 0) {
                       const info = endpointInfo.get(urlObj.pathname + urlObj.search) || { 
                         method: 'POST', 
                         postParams: [] 
                       };
                       
-                      // Add any new post parameters
                       const existingParamNames = new Set(info.postParams.map(p => p.name));
                       const newParams = postParams.filter(p => !existingParamNames.has(p.name));
                       info.postParams = [...info.postParams, ...newParams];
                       
-                      // Update endpoint info
                       endpointInfo.set(urlObj.pathname + urlObj.search, info);
                       updateResults();
                     }
@@ -941,7 +884,6 @@ javascript:(function(){
         return originalXhrOpen.apply(this, arguments);
       };
       
-      // Monitor fetch requests
       const originalFetch = window.fetch;
       window.fetch = function(resource, options = {}) {
         if (resource) {
@@ -952,11 +894,9 @@ javascript:(function(){
             
             addResult(urlObj.pathname + urlObj.search, method);
             
-            // Try to capture POST data
             if (method === 'POST' && options.body) {
               let postParams = [];
               
-              // Try to parse as JSON
               if (typeof options.body === 'string' && options.body.trim().startsWith('{')) {
                 try {
                   const jsonData = JSON.parse(options.body);
@@ -966,26 +906,22 @@ javascript:(function(){
                 } catch (e) {}
               }
               
-              // Try to parse as FormData
               if (options.body instanceof FormData) {
                 options.body.forEach((value, key) => {
                   postParams.push({ name: key, value: String(value) });
                 });
               }
               
-              // Update the endpoint info with these parameters
               if (postParams.length > 0) {
                 const info = endpointInfo.get(urlObj.pathname + urlObj.search) || { 
                   method: 'POST', 
                   postParams: [] 
                 };
                 
-                // Add any new post parameters
                 const existingParamNames = new Set(info.postParams.map(p => p.name));
                 const newParams = postParams.filter(p => !existingParamNames.has(p.name));
                 info.postParams = [...info.postParams, ...newParams];
                 
-                // Update endpoint info
                 endpointInfo.set(urlObj.pathname + urlObj.search, info);
                 updateResults();
               }
