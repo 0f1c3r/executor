@@ -99,7 +99,10 @@ javascript:(function(){
     
     container.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3 style="margin:0 0 10px 0;color:#aaa;">Endpoints Extractor & Tester</h3>
+        <div>
+          <h3 style="margin:0 0 5px 0;color:#aaa;">Endpoints Extractor & Tester</h3>
+          <div style="font-size:11px;color:#777;">Made by <a href="https://www.linkedin.com/in/senad-cavkusic/" target="_blank" style="color:#4af;text-decoration:none;">0f1cer</a></div>
+        </div>
         <button id="ep-close" class="ep-btn">✕</button>
       </div>
       
