@@ -1,4 +1,4 @@
-# Endpoint Scanner & Tester
+# Executor: Endpoint Scanner & Tester
 
 A powerful browser-based tool for discovering, analyzing, and testing web application endpoints.
 
