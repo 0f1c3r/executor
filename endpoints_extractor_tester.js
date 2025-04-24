@@ -797,12 +797,31 @@ javascript:(function(){
       }
       
       externalScripts.forEach(script => {
+        // Skip data URIs to avoid CSP issues
+        if (script.src.startsWith('data:')) {
+          console.log('Skipping data URI script:', script.src);
+          completedScripts++;
+          updateStatus(`Scanning external scripts (${completedScripts}/${externalScripts.length})...`);
+          if (completedScripts === externalScripts.length) {
+            scanPage();
+          }
+          return;
+        }
+        
+        // Try to fetch the script with improved error handling
         fetch(script.src)
-          .then(response => response.text())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+          })
           .then(content => {
             findEndpoints(content);
           })
-          .catch(error => console.error('Error fetching script:', script.src, error))
+          .catch(error => {
+            console.log('Skipping script due to error:', script.src, error.message);
+          })
           .finally(() => {
             completedScripts++;
             updateStatus(`Scanning external scripts (${completedScripts}/${externalScripts.length})...`);
